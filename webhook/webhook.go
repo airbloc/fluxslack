@@ -63,7 +63,7 @@ func (w *Webhook) handle(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.Status(http.StatusCreated)
+	c.Status(http.StatusOK)
 }
 
 func (w *Webhook) handleNoRoute(c *gin.Context) {
