@@ -80,7 +80,7 @@ func (s *sender) Compose(event fluxevent.Event) slack.Message {
 			commits := make([]string, commitCount)
 			for i, commit := range metadata.Commits {
 				uri := s.getCommitURI(commit.Revision)
-				commits[i] = fmt.Sprintf("•  <%s|`%s`> - %s", uri, shortRevision(commit.Revision), commit.Message)
+				commits[i] = fmt.Sprintf("•  <%s|%s> - %s", uri, shortRevision(commit.Revision), commit.Message)
 			}
 			blocks = append(blocks, headingBlock("Commits")...)
 			blocks = append(blocks, textBlock(strings.Join(commits, "\n")))
@@ -110,7 +110,7 @@ func (s *sender) Compose(event fluxevent.Event) slack.Message {
 }
 
 func (s *sender) formatHeader(text string) slack.Block {
-	txt := fmt.Sprintf("<%s|*%s*%s>", s.config.VCSRootURL, text, s.config.MessagePostfix)
+	txt := fmt.Sprintf("<%s|*%s*>%s", s.config.VCSRootURL, text, s.config.MessagePostfix)
 	return textBlock(txt)
 }
 
