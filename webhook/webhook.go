@@ -15,7 +15,7 @@ import (
 
 const (
 	// EndpointPath is path of the webhook receiver endpoint.
-	EndpointPath = "/v1/webhook"
+	EndpointPath = "/v1/event"
 )
 
 type Webhook struct {
