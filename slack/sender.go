@@ -45,6 +45,8 @@ func NewSender(config *Config) (Sender, error) {
 
 func (s *sender) Compose(event fluxevent.Event) slack.Message {
 	blocks := []slack.Block{}
+	var headerTxt string
+
 	switch event.Type {
 	case fluxevent.EventAutoRelease:
 		metadata := event.Metadata.(*fluxevent.AutoReleaseEventMetadata)
@@ -59,35 +61,33 @@ func (s *sender) Compose(event fluxevent.Event) slack.Message {
 			formattedImageIDs[i] = s.formatImageID(imageID)
 		}
 
-		headerTxt := fmt.Sprintf(
+		headerTxt = fmt.Sprintf(
 			"Automatically released %s",
 			strings.Join(formattedImageIDs, ", "),
 		)
-		blocks = append(blocks, s.formatHeader(headerTxt))
 
 	case fluxevent.EventSync:
 		metadata := event.Metadata.(*fluxevent.SyncEventMetadata)
 		commitCount := len(metadata.Commits)
 
-		headerTxt := fmt.Sprintf(
+		headerTxt = fmt.Sprintf(
 			"Synced %d commits to %s",
 			len(metadata.Commits),
 			s.config.ClusterName,
 		)
-		blocks = append(blocks, s.formatHeader(headerTxt))
 
 		if commitCount > 0 {
 			commits := make([]string, commitCount)
 			for i, commit := range metadata.Commits {
 				uri := s.getCommitURI(commit.Revision)
-				commits[i] = fmt.Sprintf("•  `<%s|%s>` - %s", uri, shortRevision(commit.Revision), commit.Message)
+				commits[i] = fmt.Sprintf("•  <%s|`%s`> - %s", uri, shortRevision(commit.Revision), commit.Message)
 			}
 			blocks = append(blocks, headingBlock("Commits")...)
 			blocks = append(blocks, textBlock(strings.Join(commits, "\n")))
 		}
 
 	default:
-		blocks = append(blocks, s.formatHeader(event.String()))
+		headerTxt = event.String()
 	}
 
 	// common: affected workloads
@@ -98,17 +98,19 @@ func (s *sender) Compose(event fluxevent.Event) slack.Message {
 
 		affectedWorkloads = append(affectedWorkloads, txt)
 	}
+	blocks = append([]slack.Block{s.formatHeader(headerTxt)}, blocks...)
 	blocks = append(blocks, headingBlock("Affected Workloads")...)
 	blocks = append(blocks, textBlock(strings.Join(affectedWorkloads, "\n")))
 
 	msg := slack.NewBlockMessage(blocks...)
+	msg.Text = headerTxt
 	msg.Channel = s.config.SlackChannel
 	msg.Username = s.config.SlackUserName
 	return msg
 }
 
 func (s *sender) formatHeader(text string) slack.Block {
-	txt := fmt.Sprintf("*<%s|%s%s>", s.config.VCSRootURL, text, s.config.MessagePostfix)
+	txt := fmt.Sprintf("<%s|*%s*%s>", s.config.VCSRootURL, text, s.config.MessagePostfix)
 	return textBlock(txt)
 }
 
