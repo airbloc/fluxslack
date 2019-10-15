@@ -39,8 +39,8 @@ func New(port int, sender slack.Sender) *Webhook {
 			Handler: router,
 		},
 	}
+	router.POST(EndpointPath, w.handle)
 	router.NoRoute(w.handleNoRoute)
-	router.GET(EndpointPath, w.handle)
 	return w
 }
 
