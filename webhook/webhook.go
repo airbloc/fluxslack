@@ -27,7 +27,7 @@ type Webhook struct {
 }
 
 func New(port int, sender slack.Sender) *Webhook {
-	router := gin.Default()
+	router := gin.New()
 	router.Use(loggergin.Middleware("webhook"))
 	w := &Webhook{
 		log: logger.New("webhook"),
@@ -39,8 +39,10 @@ func New(port int, sender slack.Sender) *Webhook {
 			Handler: router,
 		},
 	}
-	router.POST(EndpointPath, w.handle)
+	router.Use(w.handleRecovery)
 	router.NoRoute(w.handleNoRoute)
+
+	router.POST(EndpointPath, w.handle)
 	return w
 }
 
@@ -68,6 +70,19 @@ func (w *Webhook) handleNoRoute(c *gin.Context) {
 	c.JSON(http.StatusNotFound, gin.H{
 		"message": "not found",
 	})
+}
+
+func (w *Webhook) handleRecovery(c *gin.Context) {
+	defer func() {
+		if r := w.log.Recover(logger.Attrs{
+			"method": c.Request.Method,
+			"url":    c.Request.URL.Path,
+			"client": c.ClientIP(),
+		}); r != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
+	}()
+	c.Next()
 }
 
 func (w *Webhook) Start() error {
