@@ -18,8 +18,13 @@ import (
 	"time"
 )
 
+var (
+	// ErrNoMessage indicates that this request should be skipped.
+	ErrNoMessage = errors.New("no message")
+)
+
 type Sender interface {
-	Compose(event fluxevent.Event) slack.Message
+	Compose(event fluxevent.Event) (slack.Message, error)
 	Send(msg slack.Message) error
 }
 
@@ -47,12 +52,12 @@ func NewSender(config *Config) (Sender, error) {
 		log:    logger.New("slack"),
 		config: config,
 
-		vcsRootURL: vcsRootURL,
+		vcsRootURL:      vcsRootURL,
 		resourceURITmpl: tmpl,
 	}, nil
 }
 
-func (s *sender) Compose(event fluxevent.Event) slack.Message {
+func (s *sender) Compose(event fluxevent.Event) (slack.Message, error) {
 	blocks := []slack.Block{}
 	var headerTxt string
 
@@ -79,6 +84,11 @@ func (s *sender) Compose(event fluxevent.Event) slack.Message {
 		metadata := event.Metadata.(*fluxevent.SyncEventMetadata)
 		commitCount := len(metadata.Commits)
 
+		if commitCount == 1 && strings.Index(metadata.Commits[0].Message, "Auto-release") == 0 {
+			// skip message of syncing auto-release commit because it's redundant
+			return slack.Message{}, ErrNoMessage
+		}
+
 		headerTxt = fmt.Sprintf(
 			"Synced %d commits to %s",
 			len(metadata.Commits),
@@ -94,6 +104,9 @@ func (s *sender) Compose(event fluxevent.Event) slack.Message {
 			blocks = append(blocks, headingBlock("Commits")...)
 			blocks = append(blocks, textBlock(strings.Join(commits, "\n")))
 		}
+
+	case fluxevent.EventCommit:
+		return slack.Message{}, ErrNoMessage
 
 	default:
 		headerTxt = event.String()
@@ -115,7 +128,8 @@ func (s *sender) Compose(event fluxevent.Event) slack.Message {
 	msg.Text = headerTxt
 	msg.Channel = s.config.SlackChannel
 	msg.Username = s.config.SlackUserName
-	return msg
+
+	return msg, nil
 }
 
 func (s *sender) formatHeader(text string) slack.Block {
