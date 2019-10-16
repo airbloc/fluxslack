@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"path"
 	"strconv"
 	"strings"
@@ -26,6 +27,7 @@ type sender struct {
 	log    *logger.Logger
 	config *Config
 
+	vcsRootURL      *url.URL
 	resourceURITmpl *template.Template
 }
 
@@ -35,10 +37,17 @@ func NewSender(config *Config) (Sender, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "error parsing workload URI template")
 	}
+
+	vcsRootURL, err := url.Parse(config.VCSRootURL)
+	if err != nil {
+		return nil, errors.Wrapf(err, "wrong VCS Root URL: %s", vcsRootURL)
+	}
+
 	return &sender{
 		log:    logger.New("slack"),
 		config: config,
 
+		vcsRootURL: vcsRootURL,
 		resourceURITmpl: tmpl,
 	}, nil
 }
@@ -80,7 +89,7 @@ func (s *sender) Compose(event fluxevent.Event) slack.Message {
 			commits := make([]string, commitCount)
 			for i, commit := range metadata.Commits {
 				uri := s.getCommitURI(commit.Revision)
-				commits[i] = fmt.Sprintf("•  <%s|%s> - %s", uri, shortRevision(commit.Revision), commit.Message)
+				commits[i] = fmt.Sprintf("•  <%s|`%s`> - %s", uri, shortRevision(commit.Revision), commit.Message)
 			}
 			blocks = append(blocks, headingBlock("Commits")...)
 			blocks = append(blocks, textBlock(strings.Join(commits, "\n")))
@@ -117,7 +126,8 @@ func (s *sender) formatHeader(text string) slack.Block {
 func (s *sender) getCommitURI(revision string) string {
 	// TODO: customizable commit template
 	p := fmt.Sprintf("/commit/%s", revision)
-	return path.Join(s.config.VCSRootURL, p)
+	totalPath := path.Join(s.vcsRootURL.Path, p)
+	return fmt.Sprintf("%s://%s%s", s.vcsRootURL.Scheme, s.vcsRootURL.Host, totalPath)
 }
 
 func (s *sender) formatImageID(imageID string) string {
