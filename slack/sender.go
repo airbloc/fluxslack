@@ -101,7 +101,6 @@ func (s *sender) Compose(event fluxevent.Event) (slack.Message, error) {
 				uri := s.getCommitURI(commit.Revision)
 				commits[i] = fmt.Sprintf("•  <%s|`%s`> - %s", uri, shortRevision(commit.Revision), commit.Message)
 			}
-			blocks = append(blocks, headingBlock("Commits")...)
 			blocks = append(blocks, textBlock(strings.Join(commits, "\n")))
 		}
 
