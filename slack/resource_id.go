@@ -2,6 +2,7 @@ package slack
 
 import (
 	"bytes"
+
 	"github.com/fluxcd/flux/pkg/resource"
 )
 

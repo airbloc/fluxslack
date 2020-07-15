@@ -4,18 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"reflect"
+
 	"github.com/airbloc/flux-slack-alert/slack"
 	"github.com/airbloc/logger"
 	"github.com/airbloc/logger/module/loggergin"
 	fluxevent "github.com/fluxcd/flux/pkg/event"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"reflect"
 )
 
 const (
 	// EndpointPath is path of the webhook receiver endpoint.
-	EndpointPath = "/v1/event"
+	EndpointPath = "/v6/event"
 )
 
 type Webhook struct {

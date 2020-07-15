@@ -4,10 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/airbloc/logger"
-	fluxevent "github.com/fluxcd/flux/pkg/event"
-	"github.com/nlopes/slack"
-	"github.com/pkg/errors"
 	"net/http"
 	"net/http/httputil"
 	"path"
@@ -15,6 +11,11 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/airbloc/logger"
+	fluxevent "github.com/fluxcd/flux/pkg/event"
+	"github.com/pkg/errors"
+	"github.com/slack-go/slack"
 )
 
 type Sender interface {
