@@ -1,12 +1,13 @@
 package main
 
 import (
+	"os"
+	"os/signal"
+
 	"github.com/airbloc/flux-slack-alert/slack"
 	"github.com/airbloc/flux-slack-alert/webhook"
 	"github.com/airbloc/logger"
 	"github.com/kelseyhightower/envconfig"
-	"os"
-	"os/signal"
 )
 
 func main() {
