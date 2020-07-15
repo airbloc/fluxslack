@@ -45,7 +45,7 @@ func NewSender(config *Config) (Sender, error) {
 }
 
 func (s *sender) Compose(event fluxevent.Event) slack.Message {
-	blocks := []slack.Block{}
+	var blocks []slack.Block
 	var headerTxt string
 
 	switch event.Type {
@@ -162,7 +162,7 @@ func (s *sender) Send(msg slack.Message) error {
 		if err != nil {
 			return err
 		}
-		s.log.Error("Slack returned HTTP {}:\n{}", resp.StatusCode, body)
+		s.log.Error("Slack returned HTTP {}:\n{}", resp.StatusCode, string(body))
 		return errors.Errorf("slack returned HTTP %d", resp.StatusCode)
 	}
 	return nil
@@ -176,6 +176,9 @@ func headingBlock(text string) []slack.Block {
 }
 
 func textBlock(text string) slack.Block {
+	if text == "" {
+		text = "No data"
+	}
 	textObj := slack.NewTextBlockObject(slack.MarkdownType, text, false, false)
 	return slack.NewSectionBlock(textObj, nil, nil)
 }

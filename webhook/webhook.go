@@ -59,7 +59,7 @@ func (w *Webhook) handle(c *gin.Context) {
 	slackMsg := w.sender.Compose(msg.Event)
 	if err := w.sender.Send(slackMsg); err != nil {
 		dumpedMsg, _ := json.Marshal(slackMsg)
-		w.log.Error("Failed to send slack message: {}", err, dumpedMsg)
+		w.log.Error("Failed to send slack message: {}", err, string(dumpedMsg))
 
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
