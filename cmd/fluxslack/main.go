@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"os/signal"
+	"syscall"
 
 	"github.com/airbloc/flux-slack-alert/slack"
 	"github.com/airbloc/flux-slack-alert/webhook"
@@ -32,8 +33,8 @@ func main() {
 	}
 	log.Info("started forwarding flux event to {}", cfg.SlackWebhookURL)
 
-	quit := make(chan os.Signal)
-	signal.Notify(quit, os.Interrupt, os.Kill)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
 	if err := w.Close(); err != nil {
